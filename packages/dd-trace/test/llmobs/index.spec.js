@@ -42,6 +42,7 @@ describe('module', () => {
       '../log': logger,
       './writers/spans/agentless': LLMObsAgentlessSpanWriter,
       './writers/spans/agentProxy': LLMObsAgentProxySpanWriter,
+      '../../../dd-trace': { use () {}, _pluginManager: { _tracerConfig: { llmobs: {} } } },
       '../../../datadog-core': {
         storage: {
           getStore () {
