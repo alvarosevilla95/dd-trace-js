@@ -5,7 +5,6 @@ const {
   OUTPUT_TOKENS_METRIC_KEY,
   TOTAL_TOKENS_METRIC_KEY
 } = require('../constants')
-const log = require('../../log')
 const LLMObsPlugin = require('./base')
 
 class OpenAiLLMObsPlugin extends LLMObsPlugin {
@@ -13,13 +12,8 @@ class OpenAiLLMObsPlugin extends LLMObsPlugin {
     return 'tracing:apm:openai:request'
   }
 
-  asyncEnd (ctx) {
+  setLLMObsTags (ctx) {
     const span = ctx.currentStore?.span
-    if (!span) {
-      log.warn('Tried to start an LLMObs OpenAI span without an active APM span. Not starting LLMObs span.')
-      return
-    }
-
     const resource = ctx.methodName
     const methodName = gateResource(normalizeOpenAIResourceName(resource))
     if (!methodName) return // we will not trace all openai methods for llmobs
