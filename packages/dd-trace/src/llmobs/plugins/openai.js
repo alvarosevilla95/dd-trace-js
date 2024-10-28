@@ -1,10 +1,5 @@
 'use strict'
 
-const {
-  INPUT_TOKENS_METRIC_KEY,
-  OUTPUT_TOKENS_METRIC_KEY,
-  TOTAL_TOKENS_METRIC_KEY
-} = require('../constants')
 const LLMObsPlugin = require('./base')
 
 class OpenAiLLMObsPlugin extends LLMObsPlugin {
@@ -43,12 +38,39 @@ class OpenAiLLMObsPlugin extends LLMObsPlugin {
     }
 
     if (!error) {
-      this._tagger.tagMetrics(span, {
-        [INPUT_TOKENS_METRIC_KEY]: response.usage?.prompt_tokens,
-        [OUTPUT_TOKENS_METRIC_KEY]: response.usage?.completion_tokens,
-        [TOTAL_TOKENS_METRIC_KEY]: response.usage?.total_tokens
-      })
+      const metrics = this._setMetrics(span, response)
+      this._tagger.tagMetrics(span, metrics)
     }
+  }
+
+  _setMetrics (span, response) {
+    const metrics = {}
+    const tokenUsage = response.usage
+    if (tokenUsage) {
+      const inputTokens = tokenUsage.prompt_tokens
+      if (inputTokens) metrics.inputTokens = inputTokens
+
+      const outputTokens = tokenUsage.completion_tokens
+      if (outputTokens) metrics.outputTokens = outputTokens
+
+      const totalTokens = tokenUsage.total_toksn || (inputTokens + outputTokens)
+      if (totalTokens) metrics.totalTokens = totalTokens
+
+      return metrics
+    }
+
+    const inputTokens = span.context()._tags['openai.response.usage.prompt_tokens']
+    const outputTokens = span.context()._tags['openai.response.usage.completion_tokens']
+    const totalTokens = span.context()._tags['openai.response.usage.total_tokens'] || (inputTokens + outputTokens)
+    if (!inputTokens || !outputTokens) {
+      return metrics
+    }
+
+    if (inputTokens) metrics.inputTokens = inputTokens
+    if (outputTokens) metrics.outputTokens = outputTokens
+    if (totalTokens) metrics.totalTokens = totalTokens
+
+    return metrics
   }
 
   _tagEmbedding (span, inputs, response, error) {

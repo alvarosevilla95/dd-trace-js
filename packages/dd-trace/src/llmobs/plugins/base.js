@@ -8,7 +8,7 @@ class LLMObsPlugin extends TracingPlugin {
   constructor (...args) {
     super(...args)
 
-    this._tagger = new LLMObsTagger(this._tracerConfig)
+    this._tagger = new LLMObsTagger(this._tracerConfig, true)
   }
 
   setLLMObsTags (ctx) {

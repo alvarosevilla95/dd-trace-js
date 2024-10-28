@@ -253,9 +253,14 @@ class OpenAiTracingPlugin extends TracingPlugin {
     responseDataExtractionByMethod(methodName, tags, body, openaiStore)
     span.addTags(tags)
 
-    span.finish()
     this.sendLog(methodName, span, tags, openaiStore, error)
     this.sendMetrics(headers, body, endpoint, span._duration, error, tags)
+  }
+
+  finish (ctx) {
+    const store = ctx.currentStore
+    const span = store?.span
+    span?.finish()
   }
 
   sendMetrics (headers, body, endpoint, duration, error, spanTags) {

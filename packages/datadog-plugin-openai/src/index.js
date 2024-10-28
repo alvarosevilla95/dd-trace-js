@@ -8,8 +8,8 @@ class OpenAiPlugin extends CompositePlugin {
   static get id () { return 'openai' }
   static get plugins () {
     return {
-      llmobs: OpenAiLLMObsPlugin, // this needs to come first for its `asyncEnd` subscriber
-      tracing: OpenAiTracingPlugin
+      tracing: OpenAiTracingPlugin,
+      llmobs: OpenAiLLMObsPlugin
     }
   }
 }
