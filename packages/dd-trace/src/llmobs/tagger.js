@@ -1,5 +1,6 @@
 'use strict'
 
+const log = require('../log')
 const {
   MODEL_NAME,
   MODEL_PROVIDER,
@@ -18,7 +19,10 @@ const {
   TAGS,
   NAME,
   PROPAGATED_PARENT_ID_KEY,
-  ROOT_PARENT_ID
+  ROOT_PARENT_ID,
+  INPUT_TOKENS_METRIC_KEY,
+  OUTPUT_TOKENS_METRIC_KEY,
+  TOTAL_TOKENS_METRIC_KEY
 } = require('./constants')
 
 // maps spans to tag annotations
@@ -31,8 +35,9 @@ function setTag (span, key, value) {
 }
 
 class LLMObsTagger {
-  constructor (config) {
+  constructor (config, softFail = false) {
     this._config = config
+    this.softFail = softFail
   }
 
   static get tagMap () {
@@ -101,20 +106,20 @@ class LLMObsTagger {
       // processing these specifically for our metrics ingestion
       switch (key) {
         case 'inputTokens':
-          processedKey = 'input_tokens'
+          processedKey = INPUT_TOKENS_METRIC_KEY
           break
         case 'outputTokens':
-          processedKey = 'output_tokens'
+          processedKey = OUTPUT_TOKENS_METRIC_KEY
           break
         case 'totalTokens':
-          processedKey = 'total_tokens'
+          processedKey = TOTAL_TOKENS_METRIC_KEY
           break
       }
 
       if (typeof value === 'number') {
         filterdMetrics[processedKey] = value
       } else {
-        throw new Error(`Value for metric '${key}' must be a number, instead got ${value}`)
+        this.handleUnexpectedValue(`Value for metric '${key}' must be a number, instead got ${value}`)
       }
     }
 
@@ -130,6 +135,16 @@ class LLMObsTagger {
     setTag(span, TAGS, tags)
   }
 
+  // any public-facing LLMObs APIs using this tagger should not soft fail
+  // auto-instrumentation should soft fail
+  handleUnexpectedValue (msg) {
+    if (this.softFail) {
+      log.warn(msg)
+    } else {
+      throw new Error(msg)
+    }
+  }
+
   _tagText (span, data, key) {
     if (data) {
       if (typeof data === 'string') {
@@ -139,7 +154,7 @@ class LLMObsTagger {
           setTag(span, key, JSON.stringify(data))
         } catch {
           const type = key === INPUT_VALUE ? 'input' : 'output'
-          throw new Error(`Failed to parse ${type} value, must be JSON serializable.`)
+          this.handleUnexpectedValue(`Failed to parse ${type} value, must be JSON serializable.`)
         }
       }
     }
@@ -157,22 +172,25 @@ class LLMObsTagger {
         }
 
         if (document == null || typeof document !== 'object') {
-          throw new Error('Documents must be a string, object, or list of objects.')
+          this.handleUnexpectedValue('Documents must be a string, object, or list of objects.')
+          return undefined
         }
 
         const { text, name, id, score } = document
+        let validDocument = true
 
         if (typeof text !== 'string') {
-          throw new Error('Document text must be a string.')
+          this.handleUnexpectedValue('Document text must be a string.')
+          validDocument = false
         }
 
         const documentObj = { text }
 
-        this._tagConditionalString(name, 'Document name', documentObj, 'name')
-        this._tagConditionalString(id, 'Document ID', documentObj, 'id')
-        this._tagConditionalNumber(score, 'Document score', documentObj, 'score')
+        validDocument = this._tagConditionalString(name, 'Document name', documentObj, 'name') && validDocument
+        validDocument = this._tagConditionalString(id, 'Document ID', documentObj, 'id') && validDocument
+        validDocument = this._tagConditionalNumber(score, 'Document score', documentObj, 'score') && validDocument
 
-        return documentObj
+        return validDocument ? documentObj : undefined
       }).filter(doc => !!doc)
 
       if (documents.length) {
@@ -193,18 +211,22 @@ class LLMObsTagger {
         }
 
         if (message == null || typeof message !== 'object') {
-          throw new Error('Messages must be a string, object, or list of objects')
+          this.handleUnexpectedValue('Messages must be a string, object, or list of objects')
+          return undefined
         }
+
+        let validMessage = true
 
         const { content = '', role } = message
         let toolCalls = message.toolCalls
         const messageObj = { content }
 
         if (typeof content !== 'string') {
-          throw new Error('Message content must be a string.')
+          this.handleUnexpectedValue('Message content must be a string.')
+          validMessage = false
         }
 
-        this._tagConditionalString(role, 'Message role', messageObj, 'role')
+        validMessage = this._tagConditionalString(role, 'Message role', messageObj, 'role') && validMessage
 
         if (toolCalls) {
           if (!Array.isArray(toolCalls)) {
@@ -213,18 +235,21 @@ class LLMObsTagger {
 
           const filteredToolCalls = toolCalls.map(toolCall => {
             if (typeof toolCall !== 'object') {
-              throw new Error('Tool call must be an object.')
+              this.handleUnexpectedValue('Tool call must be an object.')
+              return undefined
             }
+
+            let validTool = true
 
             const { name, arguments: args, toolId, type } = toolCall
             const toolCallObj = {}
 
-            this._tagConditionalString(name, 'Tool name', toolCallObj, 'name')
-            this._tagConditionalObject(args, 'Tool arguments', toolCallObj, 'arguments')
-            this._tagConditionalString(toolId, 'Tool ID', toolCallObj, 'tool_id')
-            this._tagConditionalString(type, 'Tool type', toolCallObj, 'type')
+            validTool = this._tagConditionalString(name, 'Tool name', toolCallObj, 'name') && validTool
+            validTool = this._tagConditionalObject(args, 'Tool arguments', toolCallObj, 'arguments') && validTool
+            validTool = this._tagConditionalString(toolId, 'Tool ID', toolCallObj, 'tool_id') && validTool
+            validTool = this._tagConditionalString(type, 'Tool type', toolCallObj, 'type') && validTool
 
-            return toolCallObj
+            return validTool ? toolCallObj : undefined
           }).filter(toolCall => !!toolCall)
 
           if (filteredToolCalls.length) {
@@ -232,7 +257,7 @@ class LLMObsTagger {
           }
         }
 
-        return messageObj
+        return validMessage ? messageObj : undefined
       }).filter(msg => !!msg)
 
       if (messages.length) {
@@ -242,27 +267,33 @@ class LLMObsTagger {
   }
 
   _tagConditionalString (data, type, carrier, key) {
-    if (!data) return
+    if (!data) return true
     if (typeof data !== 'string') {
-      throw new Error(`${type} must be a string.`)
+      this.handleUnexpectedValue(`"${type}" must be a string.`)
+      return false
     }
     carrier[key] = data
+    return true
   }
 
   _tagConditionalNumber (data, type, carrier, key) {
-    if (!data) return
+    if (!data) return true
     if (typeof data !== 'number') {
-      throw new Error(`${type} must be a number.`)
+      this.handleUnexpectedValue(`"${type}" must be a number.`)
+      return false
     }
     carrier[key] = data
+    return true
   }
 
   _tagConditionalObject (data, type, carrier, key) {
-    if (!data) return
+    if (!data) return true
     if (typeof data !== 'object') {
-      throw new Error(`${type} must be an object.`)
+      this.handleUnexpectedValue(`"${type}" must be an object.`)
+      return false
     }
     carrier[key] = data
+    return true
   }
 }
 
