@@ -14,24 +14,23 @@ class LLMObsPlugin extends TracingPlugin {
     this._tagger = new LLMObsTagger(this._tracerConfig, true)
   }
 
-  getName () {}
-
   setLLMObsTags (ctx) {
     throw new Error('setLLMObsTags must be implemented by the subclass')
   }
 
-  getLLMObsSPanRegisterOptions (ctx) {
+  getLLMObsSpanRegisterOptions (ctx) {
     throw new Error('getLLMObsSPanRegisterOptions must be implemented by the subclass')
   }
 
   start (ctx) {
-    const oldStore = storage.getStore()
-    const parent = oldStore?.span
+    const parent = this.getLLMObsParent(ctx)
     const span = ctx.currentStore?.span
 
-    const registerOptions = this.getLLMObsSPanRegisterOptions(ctx)
+    const registerOptions = this.getLLMObsSpanRegisterOptions(ctx)
 
-    this._tagger.registerLLMObsSpan(span, { parent, ...registerOptions })
+    if (registerOptions) {
+      this._tagger.registerLLMObsSpan(span, { parent, ...registerOptions })
+    }
   }
 
   asyncEnd (ctx) {
@@ -59,6 +58,23 @@ class LLMObsPlugin extends TracingPlugin {
       config = typeof config === 'boolean' ? false : { ...config, enabled: false } // override to false
     }
     super.configure(config)
+  }
+
+  getLLMObsParent (ctx) {
+    const parentApmSpan = ctx.currentStore?.span
+    const parentLLMObsSpan = storage.getStore()?.span
+
+    let parent
+    if (
+      parentApmSpan === parentLLMObsSpan || // they are the same
+      LLMObsTagger.tagMap.has(parentApmSpan) // they are not the same, but the APM span is a parent
+    ) {
+      parent = parentApmSpan
+    } else {
+      parent = parentLLMObsSpan
+    }
+
+    return parent
   }
 }
 

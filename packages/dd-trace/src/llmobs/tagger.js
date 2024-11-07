@@ -310,7 +310,7 @@ class LLMObsTagger {
   _setTag (span, key, value) {
     if (!this._config.llmobs.enabled) return
     if (!registry.has(span)) {
-      this._handleFailure('Span must be an LLMObs generated span.')
+      this._handleFailure(`Span "${span._name}" must be an LLMObs generated span.`)
       return
     }
 
