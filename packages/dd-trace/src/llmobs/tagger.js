@@ -27,6 +27,7 @@ const {
 
 // global registry of LLMObs spans
 // maps LLMObs spans to their annotations
+// TODO: maybe move this to its own registry file?
 const registry = new WeakMap()
 
 class LLMObsTagger {
@@ -38,6 +39,10 @@ class LLMObsTagger {
 
   static get tagMap () {
     return registry
+  }
+
+  static getSpanKind (span) {
+    return registry.get(span)?.[SPAN_KIND]
   }
 
   registerLLMObsSpan (span, {
@@ -134,6 +139,10 @@ class LLMObsTagger {
       Object.assign(tags, currentTags)
     }
     this._setTag(span, TAGS, tags)
+  }
+
+  changeKind (span, newKind) {
+    this._setTag(span, SPAN_KIND, newKind)
   }
 
   _tagText (span, data, key) {
