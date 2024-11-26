@@ -330,7 +330,7 @@ class TextMapPropagator {
           context = this._resolveTraceContextConflicts(
             this._extractTraceparentContext(carrier), context, carrier)
         }
-        if (extractedContext._traceId && extractedContext.toSpanId(true) &&
+        if (extractedContext._traceId && extractedContext.toSpanId(true) !== ''.padStart(16, '0') &&
            extractedContext.toTraceId(true) !== context.toTraceId(true)) {
             console.log("spanid: ", extractedContext.toSpanId(true))
           const link = {
