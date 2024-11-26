@@ -332,6 +332,7 @@ class TextMapPropagator {
         }
         if (extractedContext._traceId && extractedContext._spanId &&
            extractedContext.toTraceId(true) !== context.toTraceId(true)) {
+            console.log("spanid: ", extractedContext._spanId)
           const link = {
             context: extractedContext,
             attributes: { reason: 'terminated_context', context_headers: extractor }
