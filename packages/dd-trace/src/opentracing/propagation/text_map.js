@@ -330,7 +330,7 @@ class TextMapPropagator {
           context = this._resolveTraceContextConflicts(
             this._extractTraceparentContext(carrier), context, carrier)
         }
-        if (extractedContext._traceId && extractedContext.toSpanId(true) !== ''.padStart(16, '0') &&
+        if (extractedContext._traceId &&
            extractedContext.toTraceId(true) !== context.toTraceId(true)) {
             console.log("spanid: ", extractedContext.toSpanId(true))
           const link = {
@@ -498,7 +498,7 @@ class TextMapPropagator {
 
   _extractGenericContext (carrier, traceKey, spanKey, radix) {
     if (carrier[traceKey] && carrier[spanKey]) {
-      if (invalidSegment.test(carrier[traceKey])) return null
+      if (invalidSegment.test(carrier[traceKey]) || invalidSegment.test(carrier[spanKey])) return null
 
       return new DatadogSpanContext({
         traceId: id(carrier[traceKey], radix),
