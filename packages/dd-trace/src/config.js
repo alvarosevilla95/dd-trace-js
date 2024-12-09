@@ -1301,7 +1301,7 @@ class Config {
         const container = containers[i]
         const value = container[name]
         
-        Console.log(name)
+        console.log(name)
         if ((value !== null && value !== undefined) || container === this._defaults) {
           if (get(this, name) === value && has(this, name)) break
 
