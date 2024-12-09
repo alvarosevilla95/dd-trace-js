@@ -1300,7 +1300,8 @@ class Config {
       for (let i = 0; i < containers.length; i++) {
         const container = containers[i]
         const value = container[name]
-
+        
+        Console.log(name)
         if ((value !== null && value !== undefined) || container === this._defaults) {
           if (get(this, name) === value && has(this, name)) break
 
