@@ -326,6 +326,8 @@ const web = {
 
     context.span.finish()
     context.finished = true
+    console.log("finishing span: ", context.span)
+    console.log("finishing spancontext: ", context)
   },
 
   finishAll (context) {
