@@ -2,6 +2,8 @@
 
 const { expect } = require('chai')
 const Config = require('../../../src/config')
+const { disable: disableLLMObsListeners } = require('../../../src/llmobs')
+const { wipe } = require('../../plugins/agent')
 
 const LLMObsTagger = require('../../../src/llmobs/tagger')
 const LLMObsEvalMetricsWriter = require('../../../src/llmobs/writers/evaluations')
@@ -64,7 +66,8 @@ describe('sdk', () => {
 
   after(() => {
     sinon.restore()
-    llmobs.disable()
+    disableLLMObsListeners()
+    wipe()
   })
 
   describe('enabled', () => {

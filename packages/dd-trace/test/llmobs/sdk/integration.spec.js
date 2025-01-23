@@ -1,5 +1,8 @@
 'use strict'
 
+const { wipe } = require('../../plugins/agent')
+const { disable: disableLLMObsListeners } = require('../../../src/llmobs')
+
 const { expectedLLMObsNonLLMSpanEvent, deepEqualWithMockValues } = require('../util')
 const chai = require('chai')
 
@@ -45,16 +48,7 @@ describe('end to end sdk integration tests', () => {
       }
     })
 
-    // another test suite may have disabled LLMObs
-    // to clear the intervals and unsubscribe
-    // in that case, the `init` call above won't have re-enabled it
-    // we'll re-enable it here
     llmobs = tracer.llmobs
-    if (!llmobs.enabled) {
-      llmobs.enable({
-        mlApp: 'test'
-      })
-    }
 
     tracer._tracer._config.apiKey = 'test'
 
@@ -69,16 +63,12 @@ describe('end to end sdk integration tests', () => {
     EvalMetricsWriter.prototype.append.resetHistory()
 
     process.removeAllListeners('beforeExit')
-
-    llmobs.disable()
-    llmobs.enable({ mlApp: 'test', apiKey: 'test' })
   })
 
   after(() => {
     sinon.restore()
-    llmobs.disable()
-    delete global._ddtrace
-    delete require.cache[require.resolve('../../../../dd-trace')]
+    wipe()
+    disableLLMObsListeners()
   })
 
   it('uses trace correctly', () => {
