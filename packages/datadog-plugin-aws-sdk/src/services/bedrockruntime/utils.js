@@ -6,7 +6,7 @@ const MODEL_TYPE_IDENTIFIERS = [
   'foundation-model/',
   'custom-model/',
   'provisioned-model/',
-  'imported-module/',
+  'imported-model/',
   'prompt/',
   'endpoint/',
   'inference-profile/',
@@ -20,7 +20,8 @@ const PROVIDER = {
   COHERE: 'COHERE',
   META: 'META',
   STABILITY: 'STABILITY',
-  MISTRAL: 'MISTRAL'
+  MISTRAL: 'MISTRAL',
+  DEEPSEEK: 'DEEPSEEK'
 }
 
 class Generation {
@@ -80,7 +81,7 @@ function parseModelId (modelId) {
   //     a. Foundation model: ARN prefix + "foundation-model/{region?}.{model_provider}.{model_name}"
   //     b. Custom model: ARN prefix + "custom-model/{model_provider}.{model_name}"
   //     c. Provisioned model: ARN prefix + "provisioned-model/{model-id}"
-  //     d. Imported model: ARN prefix + "imported-module/{model-id}"
+  //     d. Imported model: ARN prefix + "imported-model/{model-id}"
   //     e. Prompt management: ARN prefix + "prompt/{prompt-id}"
   //     f. Sagemaker: ARN prefix + "endpoint/{model-id}"
   //     g. Inference profile: ARN prefix + "{application-?}inference-profile/{model-id}"
@@ -113,7 +114,7 @@ function parseModelId (modelId) {
   return { modelProvider: 'custom', modelName: 'custom' }
 }
 
-function extractRequestParams (params, provider) {
+function extractRequestParams (params, provider = '', modelName = '') {
   const requestBody = JSON.parse(params.body)
   const modelId = params.modelId
 
@@ -198,6 +199,26 @@ function extractRequestParams (params, provider) {
       return new RequestParams()
     }
     default: {
+      if (
+        provider.toUpperCase().includes(PROVIDER.DEEPSEEK) ||
+        modelName.toUpperCase().includes(PROVIDER.DEEPSEEK)
+      ) {
+        const lastUserMessage = (requestBody.messages || [])
+          .slice()
+          .reverse()
+          .find(message => message.role === 'user')
+
+        const userPrompt = lastUserMessage?.content
+
+        return new RequestParams({
+          prompt: userPrompt,
+          temperature: requestBody.temperature,
+          topP: requestBody.top_p,
+          maxTokens: requestBody.max_tokens,
+          stopSequences: requestBody.stop
+        })
+      }
+
       return new RequestParams()
     }
   }
@@ -293,6 +314,18 @@ function extractTextAndResponseReason (response, provider, modelName) {
         return new Generation()
       }
       default: {
+        if (
+          provider.toUpperCase().includes(PROVIDER.DEEPSEEK) ||
+          modelName.toUpperCase().includes(PROVIDER.DEEPSEEK)
+        ) {
+          return new Generation({
+            message: body.choices[0].content,
+            role: body.choices[0].role,
+            inputTokens: body.usage?.prompt_tokens,
+            outputTokens: body.usage?.completion_tokens
+          })
+        }
+
         return new Generation()
       }
     }

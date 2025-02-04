@@ -55,7 +55,7 @@ class BedrockRuntimeLLMObsPlugin extends BaseLLMObsPlugin {
       name: 'bedrock-runtime.command'
     })
 
-    const requestParams = extractRequestParams(request.params, modelProvider)
+    const requestParams = extractRequestParams(request.params, modelProvider, modelName)
     const textAndResponseReason = extractTextAndResponseReason(response, modelProvider, modelName)
 
     // add metadata tags

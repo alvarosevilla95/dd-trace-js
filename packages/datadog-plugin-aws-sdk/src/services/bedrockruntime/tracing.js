@@ -20,7 +20,7 @@ class BedrockRuntime extends BaseAwsSdkPlugin {
   generateTags (params, operation, response) {
     const { modelProvider, modelName } = parseModelId(params.modelId)
 
-    const requestParams = extractRequestParams(params, modelProvider)
+    const requestParams = extractRequestParams(params, modelProvider, modelName)
     const textAndResponseReason = extractTextAndResponseReason(response, modelProvider, modelName)
 
     const tags = buildTagsFromParams(requestParams, textAndResponseReason, modelProvider, modelName, operation)

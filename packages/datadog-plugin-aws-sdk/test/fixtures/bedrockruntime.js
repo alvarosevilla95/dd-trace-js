@@ -177,6 +177,37 @@ bedrockruntime.models = [
       ]
     },
     output: 'The capital of France is Paris.'
+  },
+  {
+    provider: 'deepseek-ai',
+    modelId: 'deepseek-ai.deepseek-r1-distill-llama-8b',
+    userPrompt: prompt,
+    requestBody: {
+      messages: [
+        { role: 'system', content: 'you answer questions' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: maxTokens,
+      temperature,
+      top_p: topP
+    },
+    response: {
+      choices: [
+        { role: 'assistant', content: 'Paris' }
+      ],
+      usage: {
+        prompt_tokens: 10,
+        completion_tokens: 5,
+        total_tokens: 15
+      }
+    },
+    usage: {
+      inputTokens: 10,
+      outputTokens: 5,
+      totalTokens: 15
+    },
+    output: 'Paris',
+    outputRole: 'assistant'
   }
 ]
 bedrockruntime.modelConfig = {
