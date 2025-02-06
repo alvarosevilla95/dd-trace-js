@@ -52,11 +52,21 @@ export default [
   { name: '@eslint/js/recommnded', ...eslintPluginJs.configs.recommended },
   ...compat.extends('standard').map((config, i) => ({ name: config.name || `standard/${i + 1}`, ...config })),
   {
+    ...n.configs['flat/recommended'],
+    ignores: [
+      'packages/dd-trace/test/appsec/next/app-dir/**/*.js',
+      'packages/dd-trace/test/appsec/next/pages-dir/**/*.js',
+      'packages/datadog-plugin-next/test/app/**/*.js',
+      'packages/datadog-plugin-next/test/**/pages/**/*.js',
+      'packages/datadog-plugin-next/test/middleware.js',
+      '**/*.mjs' // TODO: This shoudln't be required, research why it is
+    ]
+  },
+  {
     name: 'dd-trace/defaults',
 
     plugins: {
       '@stylistic/js': eslintPluginStylistic,
-      n: eslintPluginN,
       unicorn: eslintPluginUnicorn
     },
 
@@ -84,6 +94,15 @@ export default [
       '@stylistic/js/object-curly-spacing': ['error', 'always'],
       'import/no-extraneous-dependencies': 'error',
       'n/no-restricted-require': ['error', ['diagnostics_channel']],
+      'n/hashbang': 'off', // TODO: Enable this rule once we have a plan to address it
+      'n/no-process-exit': 'off', // TODO: Enable this rule once we have a plan to address it
+      'n/no-unsupported-features/node-builtins': ['error', {
+        ignores: [
+          'async_hooks.createHook',
+          'async_hooks.executionAsyncId',
+          'async_hooks.executionAsyncResource'
+        ]
+      }],
       'no-console': 'error',
       'no-prototype-builtins': 'off', // Override (turned on by @eslint/js/recommnded)
       'no-unused-expressions': 'off', // Override (turned on by standard)
@@ -214,7 +233,11 @@ export default [
       'mocha/no-skipped-tests': 'off',
       'mocha/no-top-level-hooks': 'off',
       'n/handle-callback-err': 'off',
+<<<<<<< HEAD
       'require-await': 'off'
+=======
+      'n/no-missing-require': 'off'
+>>>>>>> 350b298e5 (Enable recommended rules for eslint-plugin-n)
     }
   },
   {
