@@ -209,6 +209,15 @@ export default [
     files: TEST_FILES
   },
   {
+    name: 'dd-trace/benchmarks',
+    files: [
+      'benchmark/**/*'
+    ],
+    rules: {
+      'n/no-missing-require': 'off'
+    }
+  },
+  {
     name: 'dd-trace/tests/all',
     files: TEST_FILES,
     languageOptions: {
@@ -233,11 +242,8 @@ export default [
       'mocha/no-skipped-tests': 'off',
       'mocha/no-top-level-hooks': 'off',
       'n/handle-callback-err': 'off',
-<<<<<<< HEAD
+      'n/no-missing-require': 'off',
       'require-await': 'off'
-=======
-      'n/no-missing-require': 'off'
->>>>>>> 350b298e5 (Enable recommended rules for eslint-plugin-n)
     }
   },
   {
