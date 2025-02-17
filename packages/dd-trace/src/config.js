@@ -520,6 +520,8 @@ class Config {
     this._setValue(defaults, 'legacyBaggageEnabled', true)
     this._setValue(defaults, 'isTestDynamicInstrumentationEnabled', false)
     this._setValue(defaults, 'isServiceUserProvided', false)
+    this._setValue(defaults, 'testManagementAttemptToFixRetries', 20)
+    this._setValue(defaults, 'isTestManagementEnabled', false)
     this._setValue(defaults, 'logInjection', false)
     this._setValue(defaults, 'lookup', undefined)
     this._setValue(defaults, 'inferredProxyServicesEnabled', false)
@@ -996,7 +998,7 @@ class Config {
     this._setBoolean(opts, 'llmobs.agentlessEnabled', options.llmobs?.agentlessEnabled)
     this._setString(opts, 'llmobs.mlApp', options.llmobs?.mlApp)
     this._setBoolean(opts, 'logInjection', options.logInjection)
-    this._setString(opts, 'lookup', options.lookup)
+    this._setValue(opts, 'lookup', options.lookup)
     this._setBoolean(opts, 'middlewareTracingEnabled', options.middlewareTracingEnabled)
     this._setBoolean(opts, 'openAiLogsEnabled', options.openAiLogsEnabled)
     this._setValue(opts, 'peerServiceMapping', options.peerServiceMapping)
@@ -1142,7 +1144,9 @@ class Config {
       DD_CIVISIBILITY_FLAKY_RETRY_COUNT,
       DD_TEST_SESSION_NAME,
       DD_AGENTLESS_LOG_SUBMISSION_ENABLED,
-      DD_TEST_DYNAMIC_INSTRUMENTATION_ENABLED
+      DD_TEST_DYNAMIC_INSTRUMENTATION_ENABLED,
+      DD_TEST_MANAGEMENT_ENABLED,
+      DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES
     } = process.env
 
     if (DD_CIVISIBILITY_AGENTLESS_URL) {
@@ -1162,6 +1166,11 @@ class Config {
       this._setBoolean(calc, 'ciVisAgentlessLogSubmissionEnabled', isTrue(DD_AGENTLESS_LOG_SUBMISSION_ENABLED))
       this._setBoolean(calc, 'isTestDynamicInstrumentationEnabled', isTrue(DD_TEST_DYNAMIC_INSTRUMENTATION_ENABLED))
       this._setBoolean(calc, 'isServiceUserProvided', !!this._env.service)
+      this._setBoolean(calc, 'isTestManagementEnabled', !isFalse(DD_TEST_MANAGEMENT_ENABLED))
+      this._setValue(calc,
+        'testManagementAttemptToFixRetries',
+        coalesce(maybeInt(DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES), 20)
+      )
     }
     this._setString(calc, 'dogstatsd.hostname', this._getHostname())
     this._setBoolean(calc, 'isGitUploadEnabled',
