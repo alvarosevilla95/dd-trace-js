@@ -87,7 +87,8 @@ class WAFContextWrapper {
       wafTimeout: false,
       duration: 0,
       blockTriggered: false,
-      ruleTriggered: false
+      ruleTriggered: false,
+      rateLimited: false
     }
 
     const result = this.runWaf(payload, this.wafTimeout)
@@ -138,7 +139,7 @@ class WAFContextWrapper {
     }
 
     if (ruleTriggered) {
-      Reporter.reportAttack(JSON.stringify(result.events))
+      metrics.rateLimited = Reporter.reportAttack(JSON.stringify(result.events))
     }
 
     Reporter.reportDerivatives(result.derivatives)

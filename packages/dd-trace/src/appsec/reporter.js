@@ -148,10 +148,14 @@ function reportAttack (attackData) {
     'appsec.event': 'true'
   }
 
+  let sampled = false
+
   if (limiter.isAllowed()) {
     keepTrace(rootSpan, SAMPLING_MECHANISM_APPSEC)
 
     standalone.sample(rootSpan)
+
+    sampled = true
   }
 
   // TODO: maybe add this to format.js later (to take decision as late as possible)
@@ -173,6 +177,8 @@ function reportAttack (attackData) {
   }
 
   rootSpan.addTags(newTags)
+
+  return sampled
 }
 
 function isFingerprintDerivative (derivative) {
