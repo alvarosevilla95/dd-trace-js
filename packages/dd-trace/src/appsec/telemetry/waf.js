@@ -139,6 +139,10 @@ function incrementWafInit (wafVersion, rulesVersion, success) {
   const initTags = { ...versionsTags, success }
 
   appsecMetrics.count('waf.init', initTags).inc()
+
+  if (!success) {
+    appsecMetrics.count('waf.config_errors', versionsTags).inc()
+  }
 }
 
 function incrementWafUpdates (wafVersion, rulesVersion, success) {
@@ -146,6 +150,10 @@ function incrementWafUpdates (wafVersion, rulesVersion, success) {
   const updateTags = { ...versionsTags, success }
 
   appsecMetrics.count('waf.updates', updateTags).inc()
+
+  if (!success) {
+    appsecMetrics.count('waf.config_errors', versionsTags).inc()
+  }
 }
 
 function incrementWafRequests (store) {
