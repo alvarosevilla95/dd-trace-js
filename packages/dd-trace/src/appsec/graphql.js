@@ -113,6 +113,7 @@ function beforeWriteApolloGraphqlResponse ({ abortController, abortData }) {
       rootSpan.addTags({
         '_dd.appsec.block.failed': 1
       })
+      requestData.wafResults.metrics.blockFailed = true
 
       log.error('[ASM] Blocking error', err)
     }

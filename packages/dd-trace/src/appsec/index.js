@@ -320,6 +320,8 @@ function handleResults (wafResults, req, res, rootSpan, abortController) {
         '_dd.appsec.block.failed': 1
       })
 
+      metrics.blockFailed = true
+
       log.error('[ASM] Blocking error', err)
     }
   }
